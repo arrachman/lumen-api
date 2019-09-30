@@ -78,7 +78,7 @@ class MasterController extends Controller
         $res->data->header = $header;
         $res->data->data = $data;
 
-        $res->succes();
+        $res->success();
         return $res->done();
     }
 
@@ -112,7 +112,7 @@ class MasterController extends Controller
         $db->selectFormatDate = $this->selectFormatDate;
         $res->data = $db->getData($param->filter, $param->groupBy, $param->orderBy, $param->pageLimit, $param->pageNumber);
 
-        $res->succes();
+        $res->success();
         return $res->done();
     }
     
@@ -135,7 +135,7 @@ class MasterController extends Controller
         if(isEmpty($res->data))
             return $res->fail(DataNotFound);
             
-        $res->succes();
+        $res->success();
         return $res->done();
     }
     
@@ -176,7 +176,7 @@ class MasterController extends Controller
         if($result)
             $res->data = Global_help::checkDataById($this->tableName, $this->primaryKey, $req{$this->primaryKey});
 
-        $res->succes();
+        $res->success();
         return $res->done();
     }
     
@@ -214,7 +214,7 @@ class MasterController extends Controller
             
         $res->data = Global_help::checkDataById($this->tableName, $this->primaryKey, $req->post);
         
-        $res->succes();
+        $res->success();
         return $res->done();
     }
     
@@ -240,7 +240,7 @@ class MasterController extends Controller
         if(!$result)
             return $res->fail(DeleteFailed);
 
-        $res->succes();
+        $res->success();
         return $res->done();
     }
 }

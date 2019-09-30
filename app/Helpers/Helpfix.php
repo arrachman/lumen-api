@@ -26,9 +26,24 @@ class Global_help
         return DB::table($table)->where($primary_key, $value)->update($data);
     }
 
+    static function UpdateDataFilter($table, $filter, $data)
+    {   
+        return DB::table($table)->where($filter)->update($data);
+    }
+
+    static function UpdateDataFilterRaw($table, $filter, $data)
+    {   
+        return DB::table($table)->whereRaw($filter)->update($data);
+    }
+
     static function DeleteData($table, $primary_key, $value)
     {        
         return DB::table($table)->where($primary_key, $value)->delete();
+    }
+
+    static function DeleteDataFilter($table, $filter)
+    {        
+        return DB::table($table)->where($filter)->delete();
     }
     
     static function insertData($table, $value)
@@ -38,8 +53,9 @@ class Global_help
     
     static function insertDataResIndex($table, $value)
     {        
+
         $result =  DB::table($table)->insertGetId($value);
-        $response = ['succes' => true, 'id' => $result];
+        $response = ['success' => true, 'id' => $result];
         return $response;
     }
 
@@ -86,7 +102,7 @@ class Global_help
           
         //  CEK TIPE DATA =============================================
         $cekTipeData = isDate($tglAwal, 'tglAwal');
-        if (!$cekTipeData->succes) 
+        if (!$cekTipeData->success) 
         {
             $errmessage = $cekTipeData->info;goto selesai;
         }
@@ -94,7 +110,7 @@ class Global_help
             // $tglAwal = AsFormatTanggal($tglAwal);
 
         $cekTipeData = isDate($tglAkhir, 'tglAkhir');
-        if (!$cekTipeData->succes) 
+        if (!$cekTipeData->success) 
         {
             $errmessage = $cekTipeData->info;goto selesai;
         }
@@ -178,6 +194,9 @@ class ModelsDB
         $this->selectFormatDate = $data;
     }
 
+    public $http = "";
+    public $url = "";
+
     public function getData($where = '', $groupBy = '', $orderBy = '', $pageLimit = 1, $pageNumber = 20)
     {
         // Set Variabel
@@ -188,6 +207,7 @@ class ModelsDB
         $this->pageNumber = $pageNumber;
 
         // Deklarasi Tabel
+        DB::enableQueryLog();
         $db = DB::table($this->table);
 
         foreach($this->arrJoin as $val)
@@ -207,38 +227,186 @@ class ModelsDB
         }
 
         // Filter
+                // dd(json_decode($temp, true));
+        $REQUEST_URI = '?';
         if(!isEmpty($this->where))
-            $db = $db->whereRaw($this->where);
+        {
+            if(isset($this->where['id']))
+                if(isset($this->where['id']['is']))
+                {
+                    $db = $db->where('id', $this->where['id']['is']);
+                    $REQUEST_URI .= '&filter[id][is]=' . $this->where['id']['is'];
+                }
+            if(isset($this->where['checklist_id']))
+                if(isset($this->where['checklist_id']['is']))
+                {
+                    $db = $db->where('checklist_id', $this->where['checklist_id']['is']);
+                    $REQUEST_URI .= '&filter[checklist_id][is]=' . $this->where['checklist_id']['is'];
+                }
+            if(isset($this->where['created_by']))
+                if(isset($this->where['created_by']['is']))
+                {
+                    $db = $db->where('created_by', $this->where['created_by']['is']);
+                    $REQUEST_URI .= '&filter[created_by][is]=' . $this->where['created_by']['is'];
+                }
+            if(isset($this->where['assignee_id']))
+                if(isset($this->where['assignee_id']['is']))
+                {
+                    $db = $db->where('assignee_id', $this->where['assignee_id']['is']);
+                    $REQUEST_URI .= '&filter[assignee_id][is]=' . $this->where['assignee_id']['is'];
+                }
+            if(isset($this->where['due']))
+                if(isset($this->where['due']['between']))
+                {
+                    $db = $db->whereBetween('due', explode(',', $this->where['due']['between']));
+                    $REQUEST_URI .= '&filter[due][between]=' . $this->where['due']['between'];
+                }
+
+            // if($this->where->created_by)
+        }
         
         // Group By
         $db = setGroupBy($db, $this->groupBy);
 
         // Order By
+        $REQUEST_URI .= '&sort=' . $this->orderBy;
         $db = setOrderBy($db, $this->orderBy);
         
         // Paginate
-        $result = $db->paginate($this->pageLimit, ['*'], 'page', $this->pageNumber);
+        $REQUEST_URI .= '&page[limit]=' . $this->pageLimit;
+        $REQUEST_URI .= '&page[offset]=' . $this->pageNumber;
+        $REQUEST_URI = str_replace('?&', '?', $REQUEST_URI);
+        $result = $db->paginate($this->pageLimit, [], 'page', ($this->pageNumber+$this->pageLimit)/$this->pageLimit);
+        // dd(DB::getQueryLog()); // Show results of log
+
         $returnData = $result->toArray(); 
+        if(sizeof($returnData['data']) == 0)
+        {
+            $res = [];
+            $res['meta'] = [];
+            $res['meta']['count'] = 0;
+            $res['meta']['total'] = 0;
+            $res['data'] = new \StdClass;
+            $res['links'] = new \StdClass;
+            $res['links']->first = null;
+            $res['links']->last = null;
+            $res['links']->next = null;
+            $res['links']->prev = null;
+            return $res;
+        }
+        $res = [];
+        $res['meta'] = [];
+        $res['meta']['count'] = (int)$returnData['per_page'];
+        $res['meta']['total'] = $returnData['total'];
+
+        $val = [];
+        foreach($returnData['data'] as $data)
+        {
+            $attr = new \StdClass;
+            $attr->type = $this->type;
+            $attr->id = $data->id;
+            unset($data->id);
+            $attr->attributes = $data;
+            $attr->links = new \StdClass;
+            if($this->table == 'Item_attributes')
+                $attr->links->self = $this->http . $this->url . $data->checklist_id;
+            else
+                $attr->links->self = $this->http . $this->url . $attr->id;
+            $val[] = $attr;
+        }
+
+        $res['data'] = $val;
+
+
+        $res['links'] = new \StdClass;
+        $res['links']->first = null;
+        $res['links']->last = null;
+        $res['links']->next = null;
+        $res['links']->prev = null;
+        if(0 != $this->pageNumber)
+        {
+            $offsetFirst = str_replace('page[offset]=' . $this->pageNumber, 'page[offset]=0', $REQUEST_URI);
+            $res['links']->first = $this->http . $this->url . $offsetFirst;
+        }
+        if($returnData['current_page'] < $returnData['last_page'])
+        {
+            $offsetLast = str_replace('page[offset]=' . $this->pageNumber, 'page[offset]=' . (((int)$returnData['last_page']-1) * (int)$this->pageLimit), $REQUEST_URI);
+            $res['links']->last = $this->http . $this->url . $offsetLast;
+        }
+        if($returnData['next_page_url'] != null)
+        {
+            $next_page_url = explode('page=', $returnData['next_page_url'])[1];
+            $offsetNext = str_replace('page[offset]=' . $this->pageNumber, 'page[offset]=' . (((int)$next_page_url-1) * (int)$this->pageLimit), $REQUEST_URI);
+            $res['links']->next = $this->http . $this->url . $offsetNext;
+        }
+        if($returnData['prev_page_url'] != null)
+        {
+            $prev_page_url = explode('page=', $returnData['prev_page_url'])[1];
+            $offsetPrev = str_replace('page[offset]=' . $this->pageNumber, 'page[offset]=' . (((int)$prev_page_url-1) * (int)$this->pageLimit), $REQUEST_URI);
+            $res['links']->prev = $this->http . $this->url . $offsetPrev;
+        }
+
         if($returnData['current_page'] > $returnData['last_page'])
         {
-            $result = $db->paginate($this->pageLimit, ['*'], 'page', $returnData['last_page']);
+            $result = $db->paginate($this->pageLimit, [], 'page', ($this->pageNumber+$this->pageLimit)/$this->pageLimit);
             $returnData = $result->toArray(); 
+            
+            $res = [];
+            $res['meta'] = [];
+            $res['meta']['count'] = $returnData['per_page'];
+            $res['meta']['total'] = $returnData['total'];
+
+
+            $val = [];
+            foreach($returnData['data'] as $data)
+            {
+                $attr = new \StdClass;
+                $attr->type = $this->type;
+                $attr->id = $data->id;
+                unset($data->id);
+                $attr->attributes = $data;
+                $attr->links = new \StdClass;
+                if($this->table == 'Item_attributes')
+                    $attr->links->self = $this->http . $this->url . $data->checklist_id;
+                else
+                    $attr->links->self = $this->http . $this->url . $attr->id;
+                $val[] = $attr;
+            }
+
+            $res['data'] = $val;
+
+            $res['links'] = new \StdClass;
+            $res['links']->first = null;
+            $res['links']->last = null;
+            $res['links']->next = null;
+            $res['links']->prev = null;
+            if(0 != $this->pageNumber)
+            {
+                $offsetFirst = str_replace('page[offset]=' . $this->pageNumber, 'page[offset]=0', $REQUEST_URI);
+                $res['links']->first = $this->http . $this->url . $offsetFirst;
+            }
+            if($returnData['current_page'] < $returnData['last_page'])
+            {
+                $offsetLast = str_replace('page[offset]=' . $this->pageNumber, 'page[offset]=' . (((int)$returnData['last_page']-1) * (int)$this->pageLimit), $REQUEST_URI);
+                $res['links']->last = $this->http . $this->url . $offsetLast;
+            }
+            if($returnData['next_page_url'] != null)
+            {
+                $next_page_url = explode('page=', $returnData['next_page_url'])[1];
+                $offsetNext = str_replace('page[offset]=' . $this->pageNumber, 'page[offset]=' . (((int)$next_page_url-1) * (int)$this->pageLimit), $REQUEST_URI);
+                $res['links']->next = $this->http . $this->url . $offsetNext;
+            }
+            if($returnData['prev_page_url'] != null)
+            {
+                $prev_page_url = explode('page=', $returnData['prev_page_url'])[1];
+                $offsetPrev = str_replace('page[offset]=' . $this->pageNumber, 'page[offset]=' . (((int)$prev_page_url-1) * (int)$this->pageLimit), $REQUEST_URI);
+                $res['links']->prev = $this->http . $this->url . $offsetPrev;
+            }
         }
 
-        // Manipulasi Format Date 
-        if($this->selectFormatDate != '')
-        {
-            $formatDate = str_replace(' ', '', $this->selectFormatDate);
-            $formatDate = explode(',', $formatDate);
-
-            foreach($returnData['data'] as $field)
-                foreach($formatDate as $format)
-                    if(!empty($field->{$format}))
-                        $field->{$format} = formatDate($field->{$format});
-        }
         
-        $this->result = $returnData;
-        return $returnData; 
+        $this->result = $res;
+        return $res; 
     }
 
     public function getDataById($primary_key, $value)
@@ -255,20 +423,64 @@ class ModelsDB
         
         $result = $db->get();
 
-        // Manipulasi Format Date 
-        if(!isEmpty($this->selectFormatDate))
+        $val = [];
+        $res = [];
+        foreach($result as $data)
         {
-            $formatDate = str_replace(' ', '', $this->selectFormatDate);
-            $formatDate = explode(',', $formatDate);
-    
-            foreach($result as $field)
-                foreach($formatDate as $format)
-                    $field->{$format} = formatDate($field->{$format});
+            $attr = new \StdClass;
+            $attr->type = $this->type;
+            $attr->id = $data->id;
+            unset($data->id);
+            $attr->attributes = $data;
+            $attr->links = new \StdClass;
+            if($this->table == 'Item_attributes')
+                $attr->links->self = $this->http . $this->url . $data->checklist_id;
+            else
+                $attr->links->self = $this->http . $this->url . $attr->id;
+            $val[] = $attr;
         }
-        return $result;
+
+        $res['data'] = $val;
+
+        return $res;
     }
 
 
+    public function getDataById_itemDetail($primary_key, $value)
+    {
+        // Deklarasi Tabel
+        $db = DB::table($this->table);
+
+        // Select Data
+        if(!isEmpty($this->select))
+            $db = $db->select(DB::raw($this->select));
+
+        // Filter
+        $db = $db->where($primary_key, $value);
+        
+        $result = $db->get();
+
+        $val = [];
+        $res = [];
+        foreach($result as $data)
+        {
+            $attr = new \StdClass;
+            $attr->type = $this->type;
+            $attr->id = $data->id;
+            unset($data->id);
+            $attr->attributes = $data;
+            $attr->links = new \StdClass;
+            if($this->table == 'Item_attributes')
+                $attr->links->self = $this->http . $this->url . $data->checklist_id . "/items/" . $attr->id;
+            else
+                $attr->links->self = $this->http . $this->url . $attr->id;
+            $val[] = $attr;
+        }
+
+        $res['data'] = $val;
+
+        return $res;
+    }
 }
 
 class Helpfix  
@@ -280,7 +492,7 @@ class Helpfix
     public $func = 'index';
     public $desc = '';
     public $code = 404;
-    public $succes = false;
+    public $success = false;
     public $msguser = '';
 
     public function __construct($param) 
@@ -288,18 +500,18 @@ class Helpfix
         $this->func = $param;
     }
 
-    function succes()
+    function success()
     {
         $this->code = 201;
-        $this->succes = true;
+        $this->success = true;
     }
     
     function done()
     {
-        if($this->succes)
+        if($this->success)
         {
             $res = [
-                'succes'    => true,
+                'success'    => true,
                 'data'      => $this->data,
                 'target'    => $this->target
             ];
@@ -307,7 +519,7 @@ class Helpfix
         else
         {
             $res = [
-                'succes'    => $this->succes,
+                'success'    => $this->success,
                 'data'      => $this->data,
                 'target'    => $this->target,
                 'code'      => $this->code,
@@ -322,13 +534,34 @@ class Helpfix
 
         return response()->json($res, $this->code);
     }
+    
+    function lumen()
+    {
+        return response()->json($this->data, $this->code);
+    }
+    
+    function lumenDelete()
+    {
+        return response()->json("", 204);
+    }
 
     function fail($message, $code = 409)
     {
         $this->msguser = $message;
         $this->code = $code;
 
-        return $this->done();
+        
+        $res['meta'] = [];
+        $res['meta']['count'] = 0;
+        $res['meta']['total'] = 0;
+        $res['data'] = $message;
+        $res['links'] = new \StdClass;
+        $res['links']->first = null;
+        $res['links']->last = null;
+        $res['links']->next = null;
+        $res['links']->prev = null;
+        
+        return response()->json($res, $this->code);
     }
 
     function line($line, $command)

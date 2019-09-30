@@ -404,7 +404,7 @@ class CrController extends Controller
         // 'END OF INSERT USER LOG =============================================================
 
         DB::commit();
-        $res->succes();
+        $res->success();
 
         selesai:
         return $res->done();
@@ -518,7 +518,7 @@ class CrController extends Controller
         // 'END OF INSERT USER LOG =============================================================
 
         DB::commit();
-        $res->succes();
+        $res->success();
 
         selesai:
         return $res->done();
@@ -626,7 +626,7 @@ class CrController extends Controller
         // 'END OF INSERT USER LOG =============================================================
 
         DB::commit();
-        $res->succes();
+        $res->success();
 
         selesai:
         return $res->done();
@@ -695,7 +695,7 @@ class CrController extends Controller
 
        
         
-        $res->succes();
+        $res->success();
         selesai:
         return $res->done();
     }
@@ -733,7 +733,7 @@ class CrController extends Controller
 
         $res->data = $db->result;
 
-        $res->succes();
+        $res->success();
         selesai:
         return $res->done();
     }
@@ -771,7 +771,7 @@ class CrController extends Controller
             $res->data = "Related cr data not found."; 
         }
 
-        $res->succes();
+        $res->success();
         selesai:
         return $res->done();
     }
@@ -809,7 +809,7 @@ class CrController extends Controller
 
         $res->data = $db->result;
 
-        $res->succes();
+        $res->success();
         selesai:
         return $res->done();
     }
@@ -875,7 +875,7 @@ class CrController extends Controller
 
         $res->data = [$utama, $arrDetail];
 
-        $res->succes();
+        $res->success();
         selesai:
         return $res->done();
     }

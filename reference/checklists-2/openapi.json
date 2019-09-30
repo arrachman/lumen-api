@@ -7,28 +7,44 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8000/items/"
+      "url": "http://localhost:8000/"
     }
   ],
   "paths": {
-    "/getchecklistsitems": {
-      "parameters": [],
+    "/items/getchecklistsitems": {
       "post": {
         "summary": "",
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
           }
         },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "query"
-          }
-        ]
-      }
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          },
+          "description": "{\n  \"data\": {\n    \"attribute\": {\n      \"description\": \"Need to verify this guy house.\",\n      \"due\": \"2019-01-19 18:34:51\",\n      \"urgency\": \"2\",\n      \"assignee_id\": 123\n    }\n  }\n}"
+        }
+      },
+      "parameters": []
     }
+  },
+  "components": {
+    "securitySchemes": {}
   }
 }

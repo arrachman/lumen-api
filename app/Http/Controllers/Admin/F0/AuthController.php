@@ -67,10 +67,10 @@ class AuthController extends Controller
             $dataPost{$column} = $value;
         }
         $result = Global_help::insertDataResIndex($this->tableName, $dataPost);
-        if($result['succes'])
+        if($result['success'])
             $res->data = Global_help::checkDataById($this->tableName, $this->primaryKey, $result['id']);
 
-        $res->succes();
+        $res->success();
         return $res->done();
     }
 
@@ -98,7 +98,7 @@ class AuthController extends Controller
         $db->select = 'utoken';
         $res->data = $db->getDataById('ukode', $req->username);
 
-        $res->succes();
+        $res->success();
         return $res->done();
     }
 
@@ -117,7 +117,7 @@ class AuthController extends Controller
         $authorization = str_replace('Bearer ', '', $authorization);
         $res->data = Global_help::UpdateData(TableName, 'utoken', $authorization, ['utoken' => '']);
 
-        $res->succes();
+        $res->success();
         return $res->done();
     }
 }

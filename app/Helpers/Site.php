@@ -104,7 +104,7 @@ function isDate($param = '', $nama = 'param')
     ]);
 
     $res = json_decode("{}");
-    $res->succes = !$validator->fails();
+    $res->success = !$validator->fails();
     $res->info = ($validator->fails()) ? $validator->messages()->all()[0] : '';
 
     return $res;
