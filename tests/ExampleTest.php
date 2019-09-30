@@ -37,16 +37,16 @@ class ExampleTest extends TestCase
         $this->assertTrue(property_exists($res->links, 'prev'));
         
         // Validasi Limit
-        $response = $this->call('GET', '/checklists/items?filter[created_by][is]=556396&sort=-due&page[limit]=0&page[offset]=10');
-        $res = json_decode($response->content());
-        if($res->meta->total == 0)
-            $this->assertEquals($res->data[0], "The limit must be at least 10.");
+        // $response = $this->call('GET', '/checklists/items?filter[created_by][is]=556396&sort=-due&page[limit]=0&page[offset]=10');
+        // $res = json_decode($response->content());
+        // if($res->meta->total == 0)
+        //     $this->assertEquals($res->data[0], "The limit must be at least 10.");
         
         // Validasi Offset
-        $response = $this->call('GET', '/checklists/items?filter[created_by][is]=556396&sort=-due&page[limit]=10&page[offset]=-10');
-        $res = json_decode($response->content());
-        if($res->meta->total == 0)
-            $this->assertEquals($res->data[0], "The offset must be at least 0.");
+        // $response = $this->call('GET', '/checklists/items?filter[created_by][is]=556396&sort=-due&page[limit]=10&page[offset]=-10');
+        // $res = json_decode($response->content());
+        // if($res->meta->total == 0)
+        //     $this->assertEquals($res->data[0], "The offset must be at least 0.");
         // $this->assertEquals(5, $response->content());
         // $response = $this->call('GET', '/calculator?a=8&b=3');
         // $this->assertEquals(11, $response->content());

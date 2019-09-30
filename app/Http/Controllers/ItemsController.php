@@ -26,8 +26,8 @@ class ItemsController extends Controller
         $validator = Validator::make((array)$req->page, [
             'limit' => 'required|numeric|min:10',
             'offset' => 'required|numeric|min:0']);
-        if ($validator->fails()) 
-            return $res->fails($validator->messages()->all());
+        // if ($validator->fails()) 
+        //     return $res->fails($validator->messages()->all());
  
         $db = new ModelsDB('Item_attributes');
         $db->http = "http://localhost:8000";

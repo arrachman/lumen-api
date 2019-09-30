@@ -20,7 +20,7 @@ class TemplatesController extends Controller
         $db = new ModelsDB('template_attributes');
         $db->http = "http://localhost:8000";
         $db->url = "/checklists/templates/";
-        $db->type = "template";
+        $db->type = "templates";
         $res->data = $db->getData($req->filter, '', $req->sort, $req->page['limit'], $req->page['offset']);
 
         foreach($res->data['data'] as $no => $template)
@@ -289,7 +289,7 @@ class TemplatesController extends Controller
         $db = new ModelsDB('template_attributes');
         $db->http = "http://localhost:8000";
         $db->url = "/checklists/templates/";
-        $db->type = "template";
+        $db->type = "templates";
         $filter = [];
         $filter['id'] = [];
         $filter['id']['is'] = $req->templateId;
