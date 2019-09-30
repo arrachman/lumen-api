@@ -11,7 +11,7 @@ use App\Helpers\Global_help;
 use Validator;
 use DB;
 
-class AttrController extends Controller
+class ItemsController extends Controller
 {
     public function getallitems(Request $req)
     {
@@ -42,10 +42,6 @@ class AttrController extends Controller
     public function create_checklist_item(Request $req)
     {
         $res = new Res('');
-        
-        $result = Global_help::checkDataById('Item_attributes', 'created_at', '2019-07-25 09:34:02');
-        if(!isEmpty($result))
-            return $res->fail('DataAlreadyExists' . " '" . '2019-07-25 09:34:02' . "'");
 
         $param = json_decode($req->getContent(), true);
         $param['data']['attribute']['created_at'] = \Carbon\Carbon::parse('')->format('Y-m-d H:m:s');
@@ -339,24 +335,11 @@ class AttrController extends Controller
         $db->url = "/checklists/";
         $db->type = "items";
         return $db->getDataById_itemDetail('id', $req->itemId);
-        
-        $res->success();
-        return $res->done();
     }
 
     public function delete_checklist_item(Request $req)
     {
         $res = new Res('');
-
-        if(!isEmpty($req->param))
-        {
-            $param = json_decode($req->param);
-            $res->target = $param->target; 
-        }
-
-        // $result = Global_help::checkDataById('checklist_attributes', 'id', $req->checklistId);
-        // if(isEmpty($result))
-        //     return $res->fail(`DataNotFound`);
 
         $filter = [];
         $filter['id'] = [];
@@ -365,10 +348,6 @@ class AttrController extends Controller
         $filter['checklist_id']['is'] = $req->checklistId;
         $result = Global_help::DeleteDataFilter('Item_attributes', $filter);
             
-        if(!$result)
-        return $res->lumenDelete();
-
-        $res->success();
         return $res->lumenDelete();
     }
 }
